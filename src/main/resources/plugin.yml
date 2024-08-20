@@ -1,0 +1,7 @@
+name: sovaTabPrefix
+version: '1.0'
+main: org.sovakin.sovaTabPrefix.SovaTabPrefix
+api-version: '1.20'
+authors: [ s0vakin ]
+depend: [PlaceholderAPI]
+website: https://twitchworld.ru/

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChatHistory">
+    <accountData>
+      <list>
+        <AccountData>
+          <accountId value="VXNlcjo1NDU0OTA=" />
+          <chats>
+            <list>
+              <chat>
+                <internalId value="24c32c2f-7a8c-4205-8353-1e0781f9cc3b" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+                <messages>
+                  <list>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="@...\sovakin\sovaTabPrefix\SovaTabPrefix.java добавь логи" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Certainly! I'll add some logging to the SovaTabPrefix.java file to help with debugging and monitoring. Here's the modified version with added logs:&#10;&#10;```java&#10;package org.sovakin.sovaTabPrefix;&#10;&#10;import com.google.common.io.ByteArrayDataInput;&#10;import com.google.common.io.ByteArrayDataOutput;&#10;import com.google.common.io.ByteStreams;&#10;import net.luckperms.api.LuckPerms;&#10;import net.luckperms.api.LuckPermsProvider;&#10;import net.luckperms.api.model.user.User;&#10;import org.bukkit.Bukkit;&#10;import org.bukkit.entity.Player;&#10;import org.bukkit.event.EventHandler;&#10;import org.bukkit.event.player.PlayerJoinEvent;&#10;import org.bukkit.plugin.java.JavaPlugin;&#10;import org.bukkit.plugin.messaging.PluginMessageListener;&#10;import me.clip.placeholderapi.PlaceholderAPI;&#10;&#10;import java.util.HashMap;&#10;import java.util.Map;&#10;import java.util.logging.Logger;&#10;&#10;public class SovaTabPrefix extends JavaPlugin implements PluginMessageListener {&#10;&#10;    private LuckPerms luckPerms;&#10;    private Logger logger;&#10;&#10;    @Override&#10;    public void onEnable() {&#10;        logger = getLogger();&#10;        logger.info(&quot;SovaTabPrefix is starting...&quot;);&#10;&#10;        // Инициализация LuckPerms API&#10;        luckPerms = LuckPermsProvider.get();&#10;        logger.info(&quot;LuckPerms API initialized.&quot;);&#10;&#10;        // Регистрация канала для получения и отправки сообщений&#10;        this.getServer().getMessenger().registerIncomingPluginChannel(this, &quot;sovatab:data&quot;, this);&#10;        this.getServer().getMessenger().registerOutgoingPluginChannel(this, &quot;sovatab:data&quot;);&#10;        logger.info(&quot;Plugin channels registered.&quot;);&#10;&#10;        logger.info(&quot;SovaTabPrefix has been enabled successfully!&quot;);&#10;    }&#10;&#10;    @EventHandler&#10;    public void onPlayerJoin(PlayerJoinEvent event) {&#10;        logger.info(&quot;Player &quot; + event.getPlayer().getName() + &quot; joined. Sending prefix data to all online players.&quot;);&#10;        for (Player player : Bukkit.getOnlinePlayers()) {&#10;            sendPrefixData(player);&#10;        }&#10;    }&#10;&#10;    @Override&#10;    public void onPluginMessageReceived(String channel, Player player, byte[] message) {&#10;        if (channel.equals(&quot;sovatab:data&quot;)) {&#10;            logger.info(&quot;Received plugin message from channel: &quot; + channel);&#10;            ByteArrayDataInput in = ByteStreams.newDataInput(message);&#10;            String requester = in.readUTF();&#10;            logger.info(&quot;Prefix data requested by: &quot; + requester);&#10;&#10;            // Отправляем префиксы всех игроков запрашивающему клиенту&#10;            sendPrefixData(player);&#10;        }&#10;    }&#10;&#10;    public void sendPrefixData(Player player) {&#10;        logger.info(&quot;Preparing prefix data for player: &quot; + player.getName());&#10;        Map&lt;String, String&gt; prefixData = new HashMap&lt;&gt;();&#10;        for (Player p : Bukkit.getOnlinePlayers()) {&#10;            User user = luckPerms.getUserManager().getUser(p.getUniqueId());&#10;            if (user != null) {&#10;                // Получаем префикс через PlaceholderAPI, чтобы включить цветовые коды&#10;                String prefix = PlaceholderAPI.setPlaceholders(p, &quot;%luckperms_prefix%&quot;);&#10;                if (prefix == null || prefix.isEmpty()) {&#10;                    prefix = &quot;&amp;7&quot;; // Если префикс пустой, используем стандартный серый цвет&#10;                }&#10;                prefixData.put(p.getName(), prefix);&#10;                logger.info(&quot;Prefix for &quot; + p.getName() + &quot;: &quot; + prefix);&#10;            }&#10;        }&#10;&#10;        // Подготавливаем и отправляем данные на клиент&#10;        ByteArrayDataOutput out = ByteStreams.newDataOutput();&#10;        out.writeInt(prefixData.size());&#10;        prefixData.forEach((username, prefix) -&gt; {&#10;            out.writeUTF(username);&#10;            out.writeUTF(prefix);&#10;        });&#10;&#10;        // Отправляем данные клиенту&#10;        player.sendPluginMessage(this, &quot;sovatab:data&quot;, out.toByteArray());&#10;        logger.info(&quot;Prefix data sent to player: &quot; + player.getName());&#10;    }&#10;&#10;    @Override&#10;    public void onDisable() {&#10;        logger.info(&quot;SovaTabPrefix is shutting down...&quot;);&#10;        // Add any cleanup code here if needed&#10;        logger.info(&quot;SovaTabPrefix has been disabled.&quot;);&#10;    }&#10;}&#10;```&#10;&#10;I've added logging statements throughout the code to provide more information about the plugin's operations. This will help you track the flow of the plugin, see when players join, when prefix data is requested and sent, and any potential issues that may arise. The logs will be output to your server's console and log files, making it easier to debug and monitor the plugin's behavior." />
+                    </message>
+                  </list>
+                </messages>
+                <updatedAt value="2024-08-19T07:56:46.5659495" />
+              </chat>
+              <chat>
+                <internalId value="7d1d5475-e671-4229-9b4b-c1d12a6dcc96" />
+              </chat>
+              <chat>
+                <internalId value="cb4a254a-bdaf-490b-bd95-c887e1d221c6" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="7a9f7e8f-b3b0-4b2b-8faf-47745c8d2273" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="70e1c50a-2deb-4d8c-bb36-a4dc60319aee" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="8ef694d3-e29a-4eb4-b0a2-05466914728f" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d9911f74-909f-495a-adac-aa16048cff64" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="3c7897f2-c4bc-42bb-9eec-7a17119959d6" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="8b352203-c8ba-499b-ae2c-d6ed26396e27" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="b644980e-3a2a-47c2-8e0f-a83cc9093174" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <tags>
+                      <list>
+                        <option value="gateway" />
+                        <option value="accuracy" />
+                        <option value="recommended" />
+                        <option value="free" />
+                      </list>
+                    </tags>
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+            </list>
+          </chats>
+          <defaultLlm>
+            <llm>
+              <model value="anthropic/claude-3-5-sonnet-20240620" />
+              <provider value="Anthropic" />
+              <tags>
+                <list>
+                  <option value="gateway" />
+                  <option value="accuracy" />
+                  <option value="recommended" />
+                  <option value="free" />
+                </list>
+              </tags>
+              <title value="Claude 3.5 Sonnet" />
+              <usage>
+                <list>
+                  <option value="chat" />
+                  <option value="edit" />
+                </list>
+              </usage>
+            </llm>
+          </defaultLlm>
+        </AccountData>
+      </list>
+    </accountData>
+  </component>
+</project>
